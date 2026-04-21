@@ -255,6 +255,10 @@ code {
   display: block;
   border-radius: 4px;
 }
+.qr-card.qr-small { padding: .75rem; gap: .5rem; }
+.qr-card.qr-small img,
+.qr-card.qr-small .qr-placeholder { width: 6.5rem; height: 6.5rem; }
+.qr-card.qr-small .qr-label { font-size: .68rem; letter-spacing: .07em; }
 .qr-card .qr-placeholder {
   background:
     repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.08) 8px, rgba(0,0,0,0.08) 16px),
@@ -972,24 +976,34 @@ code {
   <h1 style="font-size:3rem; margin-bottom:1rem;">Let's Begin</h1>
   <p style="font-size:1.3rem; color:var(--color-yellow); margin-bottom:2rem;">owasp-finbot-ctf.org</p>
 
-  <div style="display:flex; gap:2.5rem; justify-content:center; align-items:center; flex-wrap:wrap;">
-    <div class="qr-card qr-yellow">
-      <img src="assets/qr-platform-yellow.png" alt="QR: owasp-finbot-ctf.org" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-platform-yellow.png'}))">
-      <p class="qr-label">Scan to launch<br>owasp-finbot-ctf.org</p>
+  <div style="display:flex; gap:2rem; justify-content:center; align-items:flex-start; flex-wrap:wrap;">
+    <div style="display:flex; flex-direction:column; gap:1.25rem; align-items:center;">
+      <div class="qr-card qr-yellow">
+        <img src="assets/qr-platform-yellow.png" alt="QR: owasp-finbot-ctf.org" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-platform-yellow.png'}))">
+        <p class="qr-label">Launch the<br>platform</p>
+      </div>
+      <div class="qr-card qr-white">
+        <img src="assets/qr-labguide.png" alt="QR: Lab Guide" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-labguide.png'}))">
+        <p class="qr-label">Bookmark the<br>Lab Guide</p>
+      </div>
     </div>
 
     <div style="display:flex; flex-direction:column; gap:1rem; text-align:left;">
-      <div class="card" style="min-width:280px;">
+      <div class="card" style="min-width:300px;">
         <h3 style="margin-bottom:.25rem;">1. Sign In</h3>
         <p style="font-size:.9rem; margin:0;">Magic link via email &mdash; or continue without signing in</p>
       </div>
-      <div class="card" style="min-width:280px;">
+      <div class="card" style="min-width:300px;">
         <h3 style="margin-bottom:.25rem;">2. Register a Vendor</h3>
         <p style="font-size:.9rem; margin:0;">Vendor Portal &rarr; Onboarding. Any company name works.</p>
       </div>
-      <div class="card" style="min-width:280px;">
+      <div class="card" style="min-width:300px;">
         <h3 style="margin-bottom:.25rem;">3. Explore the Portals</h3>
         <p style="font-size:.9rem; margin:0;">Vendor &middot; Admin &middot; Dark Lab &middot; CTF &middot; Labs</p>
+      </div>
+      <div class="card" style="min-width:300px; border-color:var(--color-yellow); background:rgba(255,175,54,0.06);">
+        <h3 style="margin-bottom:.25rem; color:var(--color-yellow);">4. Build &middot; Break &middot; Defend</h3>
+        <p style="font-size:.9rem; margin:0;">Be curious. Be creative. Be ruthless. Every exploit is a lesson, every defense is a takeaway. Have fun.</p>
       </div>
     </div>
   </div>
@@ -1385,29 +1399,53 @@ code {
   <div class="slide-label">Next Steps</div>
   <h2>Resources &amp; Next Steps</h2>
 
-  <div class="grid-3" style="margin-top:1.5rem;">
-    <div style="display:flex; flex-direction:column; align-items:center; gap:.75rem;">
-      <div class="qr-card qr-white">
+  <div class="qr-row" style="display:flex; gap:1.25rem; justify-content:center; flex-wrap:wrap; margin-top:1.5rem;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.5rem;">
+      <div class="qr-card qr-white qr-small">
+        <img src="assets/qr-labguide.png" alt="QR: Lab Guide" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-labguide.png'}))">
+        <p class="qr-label">Lab Guide</p>
+      </div>
+      <p style="font-size:.78rem; color:var(--color-white-dim); margin:0; max-width:130px;">Reference doc<!--<br><strong>finbot-sans-resources</strong>--></p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.5rem;">
+      <div class="qr-card qr-white qr-small">
+        <img src="assets/qr-slides.png" alt="QR: Slides" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-slides.png'}))">
+        <p class="qr-label">Slides</p>
+      </div>
+      <p style="font-size:.78rem; color:var(--color-white-dim); margin:0; max-width:130px;">This deck<!--<br><strong>/slides.html</strong>--></p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.5rem;">
+      <div class="qr-card qr-white qr-small">
         <img src="assets/qr-platform.png" alt="QR: owasp-finbot-ctf.org" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-platform.png'}))">
         <p class="qr-label">Keep Practicing</p>
       </div>
-      <p style="font-size:.85rem; color:var(--color-white-dim); margin:0;">19 challenges<br><strong>owasp-finbot-ctf.org</strong></p>
+      <p style="font-size:.78rem; color:var(--color-white-dim); margin:0; max-width:130px;">FinBot Platform<!--<br><strong>owasp-finbot-ctf.org</strong>--></p>
     </div>
 
-    <div style="display:flex; flex-direction:column; align-items:center; gap:.75rem;">
-      <div class="qr-card qr-white">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.5rem;">
+      <div class="qr-card qr-white qr-small">
         <img src="assets/qr-github.png" alt="QR: GitHub Repository" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-github.png'}))">
         <p class="qr-label">Contribute</p>
       </div>
-      <p style="font-size:.85rem; color:var(--color-white-dim); margin:0;">GitHub<br><strong>GenAI-Security-Project/finbot-ctf</strong></p>
+      <p style="font-size:.78rem; color:var(--color-white-dim); margin:0; max-width:130px;">Official GitHub<!--<br><strong>GenAI-Security-Project/finbot-ctf</strong>--></p>
     </div>
 
-    <div style="display:flex; flex-direction:column; align-items:center; gap:.75rem;">
-      <div class="qr-card qr-white">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.5rem;">
+      <div class="qr-card qr-white qr-small">
         <img src="assets/qr-linkedin.png" alt="QR: LinkedIn" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-linkedin.png'}))">
         <p class="qr-label">Follow &amp; Share</p>
       </div>
-      <p style="font-size:.85rem; color:var(--color-white-dim); margin:0;">LinkedIn<br><strong>OWASP FinBot CTF</strong></p>
+      <p style="font-size:.78rem; color:var(--color-white-dim); margin:0; max-width:130px;">LinkedIn<!--<br><strong>OWASP FinBot CTF</strong>--></p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.5rem;">
+      <div class="qr-card qr-white qr-small">
+        <img src="assets/qr-owasp-genai.png" alt="QR: OWASP GenAI Security Project" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-owasp-genai.png'}))">
+        <p class="qr-label">Join the Mission</p>
+      </div>
+      <p style="font-size:.78rem; color:var(--color-white-dim); margin:0; max-width:130px;">OWASP GenAI<!--<br><strong>genai.owasp.org</strong>--></p>
     </div>
   </div>
 
