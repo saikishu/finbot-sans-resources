@@ -2311,6 +2311,9 @@ code {
     }
 
     function init() {
+      // Suppress saves during initial setup so we don't clobber a previously
+      // persisted session before we get a chance to restore it.
+      hydrating = true;
       renderPresets();
       setMode('down');
       updatePanelUI();
@@ -2359,7 +2362,8 @@ code {
         if (e.key === STORAGE_KEY) hydrate();
       });
 
-      // Restore any previous session
+      // Restore any previous session (hydrate manages the hydrating flag itself)
+      hydrating = false;
       hydrate();
     }
 
