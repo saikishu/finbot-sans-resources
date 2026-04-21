@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OWASP FinBot Lab — SANS AI Cybersecurity Summit 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aleo:ital,wght@0,300;0,400;0,700;1,400&family=Fira+Sans:wght@300;400;500;600;700&family=Kode+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-navy: #00132c;
+  --color-blue-mid: #00334d;
+  --color-blue-core: #005880;
+  --color-blue: #0098bb;
+  --color-turquoise: #00bccc;
+  --color-yellow: #ffaf36;
+  --color-white: #ffffff;
+  --color-white-dim: rgba(255,255,255,0.75);
+  --color-white-muted: rgba(255,255,255,0.45);
+  --color-green: #22c55e;
+  --color-red: #ef4444;
+  --font-body: 'Fira Sans', sans-serif;
+  --font-heading: 'Aleo', serif;
+  --font-mono: 'Kode Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  color: var(--color-white);
+  background: var(--color-navy);
+  margin: 0;
+  padding: 0;
+}
+
+/* Presentation container */
+.deck {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-navy);
+}
+
+/* Slide container */
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  padding: 5vh 8vw;
+  background:
+    radial-gradient(ellipse 60% 50% at 85% 15%, rgba(0,188,204,0.35) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 40% at 90% 25%, rgba(255,175,54,0.25) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 45% at 75% 5%, rgba(176,52,154,0.22) 0%, transparent 60%),
+    linear-gradient(160deg, var(--color-navy) 0%, var(--color-blue-mid) 50%, var(--color-navy) 100%);
+  overflow: hidden;
+  animation: slideIn 0.4s ease-out;
+}
+.slide.active { display: flex; }
+
+/* Subtle film grain overlay for texture */
+.slide::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
+}
+.slide > * { position: relative; z-index: 1; }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.slide::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-turquoise), var(--color-yellow), var(--color-turquoise));
+}
+
+/* Typography */
+h1 {
+  font-family: var(--font-heading);
+  font-size: 3.2rem;
+  font-weight: 700;
+  color: var(--color-turquoise);
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+h2 {
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--color-turquoise);
+  line-height: 1.2;
+  margin-bottom: 1.25rem;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  color: var(--color-yellow);
+  margin-bottom: .75rem;
+}
+p { font-size: 1.15rem; line-height: 1.6; color: var(--color-white-dim); margin-bottom: .75rem; }
+ul, ol { font-size: 1.1rem; line-height: 1.7; color: var(--color-white-dim); padding-left: 1.5rem; }
+li { margin-bottom: .5rem; }
+strong { color: var(--color-white); }
+code {
+  font-family: var(--font-mono);
+  font-size: .9em;
+  background: rgba(0,51,77,0.7);
+  padding: .15em .4em;
+  border-radius: 3px;
+  color: var(--color-turquoise);
+}
+
+/* Slide label */
+.slide-label {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  color: var(--color-white-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  border: 1px solid var(--color-turquoise);
+  color: var(--color-turquoise);
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  padding: .3em 1em;
+  border-radius: 100px;
+}
+.badge.yellow { border-color: var(--color-yellow); color: var(--color-yellow); }
+
+/* Grid layouts */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+
+/* Card */
+.card {
+  background: rgba(0,51,77,0.4);
+  border: 1px solid var(--color-blue-core);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+}
+.card h3 { margin-bottom: .5rem; }
+.card p { font-size: 1rem; margin-bottom: 0; }
+
+/* Flow diagram */
+.flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  font-family: var(--font-mono);
+  font-size: .95rem;
+  color: var(--color-blue);
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+.flow .node {
+  background: rgba(0,51,77,0.5);
+  border: 1px solid var(--color-blue-core);
+  padding: .4rem .8rem;
+  border-radius: 6px;
+  color: var(--color-white-dim);
+}
+.flow .node.highlight {
+  border-color: var(--color-yellow);
+  color: var(--color-yellow);
+  background: rgba(255,175,54,0.1);
+}
+.flow .node.danger {
+  border-color: var(--color-red);
+  color: var(--color-red);
+  background: rgba(239,68,68,0.1);
+}
+.flow .arrow { color: var(--color-white-muted); font-size: 1.2rem; }
+
+/* Hat badge for lab slides */
+.hat {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: rgba(0,152,187,0.15);
+  border: 1px solid var(--color-blue-core);
+  padding: .3rem .8rem;
+  border-radius: 100px;
+  font-size: .85rem;
+  color: var(--color-blue);
+  margin-right: .5rem;
+}
+
+/* OWASP tag */
+.owasp-tag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  background: rgba(0,188,204,0.12);
+  border: 1px solid rgba(0,188,204,0.3);
+  color: var(--color-turquoise);
+  padding: .2rem .6rem;
+  border-radius: 4px;
+  margin-right: .4rem;
+  margin-bottom: .3rem;
+}
+
+/* Impact box */
+.impact {
+  background: rgba(239,68,68,0.08);
+  border-left: 3px solid var(--color-red);
+  padding: .75rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin-top: 1rem;
+}
+.impact p { color: var(--color-white-dim); font-size: 1rem; margin: 0; }
+.impact strong { color: var(--color-red); }
+
+/* Success box */
+.success-box {
+  background: rgba(34,197,94,0.08);
+  border-left: 3px solid var(--color-green);
+  padding: .75rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin-top: 1rem;
+}
+.success-box p { color: var(--color-white-dim); font-size: 1rem; margin: 0; }
+
+/* QR code cards */
+.qr-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .6rem;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.qr-card img,
+.qr-card .qr-placeholder {
+  width: 8rem;
+  height: 8rem;
+  display: block;
+  border-radius: 4px;
+}
+.qr-card .qr-placeholder {
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0,0,0,0.08) 8px, rgba(0,0,0,0.08) 16px),
+    var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  color: var(--color-blue-core);
+  text-align: center;
+  padding: .5rem;
+}
+.qr-card .qr-label {
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  text-align: center;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* QR card variants */
+.qr-card.qr-yellow { background: var(--color-yellow); }
+.qr-card.qr-yellow .qr-label { color: var(--color-navy); font-weight: 700; }
+
+.qr-card.qr-white { background: var(--color-white); }
+.qr-card.qr-white .qr-label { color: var(--color-navy); font-weight: 600; }
+
+.qr-card.qr-tint { background: #e8f6f8; }
+.qr-card.qr-tint .qr-label { color: var(--color-navy); font-weight: 600; }
+
+/* Footer on slides */
+.slide-footer {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 8vw;
+  right: 8vw;
+  display: flex;
+  justify-content: space-between;
+  font-size: .7rem;
+  color: var(--color-white-muted);
+  font-family: var(--font-mono);
+}
+
+/* SANS-style title slide */
+.title-slide {
+  justify-content: flex-start;
+  padding-top: 8vh;
+}
+.title-slide.active { display: flex; }
+
+.title-workshop-tag {
+  display: inline-block;
+  font-size: 1.4rem;
+  letter-spacing: .02em;
+  margin-bottom: 2rem;
+  font-family: var(--font-body);
+}
+
+.title-main {
+  font-family: var(--font-heading);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--color-white);
+  line-height: 1.15;
+  margin-bottom: 3rem;
+  max-width: 80%;
+}
+
+.title-instructors {
+  display: flex;
+  gap: 3rem;
+  margin-bottom: 2.5rem;
+}
+.title-instructors .instr-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.title-instructors .instr-photo {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-turquoise);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 0 4px rgba(0,188,204,0.15);
+  flex-shrink: 0;
+}
+.title-instructors .instr-name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--color-white);
+  margin-bottom: .2rem;
+  line-height: 1.2;
+}
+.title-instructors .instr-role {
+  font-size: .9rem;
+  color: var(--color-white-dim);
+  margin: 0;
+  font-weight: 400;
+}
+
+.title-event {
+  margin-top: auto;
+  margin-bottom: 4rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.title-event .sans-logo {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-white);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.title-event .sans-logo:hover { color: var(--color-yellow); }
+.title-event .sans-logo svg {
+  height: 3.5rem;
+  width: auto;
+  display: block;
+}
+.title-event .title-dates {
+  font-size: 1.1rem;
+  color: var(--color-white-dim);
+  font-weight: 500;
+  margin: 0;
+  padding-left: 1.5rem;
+  border-left: 1px solid var(--color-blue-core);
+}
+
+.title-summit-brand {
+  position: absolute;
+  bottom: 6vh;
+  right: 8vw;
+  text-align: right;
+}
+.title-summit-brand .summit-line1 {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  color: var(--color-yellow);
+  font-weight: 700;
+  line-height: 1;
+  margin: 0;
+}
+.title-summit-brand .summit-line2 {
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  color: var(--color-white);
+  font-weight: 300;
+  letter-spacing: .15em;
+  margin-top: .25rem;
+}
+
+.title-hashtag {
+  position: absolute;
+  top: 5vh;
+  right: 8vw;
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  color: var(--color-white);
+  font-weight: 500;
+  letter-spacing: .02em;
+  opacity: 0.85;
+}
+
+/* Navigation Controls */
+.nav {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(0,19,44,0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-blue-core);
+  border-radius: 100px;
+  padding: .35rem .5rem;
+  z-index: 100;
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+.nav:hover { opacity: 1; }
+.nav button {
+  background: transparent;
+  border: none;
+  color: var(--color-white);
+  cursor: pointer;
+  padding: .35rem .65rem;
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  transition: background 0.15s;
+}
+.nav button:hover { background: rgba(0,188,204,0.15); color: var(--color-turquoise); }
+.nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+.nav .counter {
+  color: var(--color-white-muted);
+  padding: 0 .5rem;
+  user-select: none;
+  min-width: 4rem;
+  text-align: center;
+}
+.nav .counter strong { color: var(--color-turquoise); }
+
+/* Progress bar */
+.progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-turquoise), var(--color-yellow));
+  z-index: 99;
+  transition: width 0.3s ease;
+}
+
+/* Help overlay */
+.help-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0,19,44,0.85);
+  border: 1px solid var(--color-blue-core);
+  color: var(--color-white-dim);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  z-index: 100;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+.help-toggle:hover { opacity: 1; color: var(--color-turquoise); }
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,19,44,0.95);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  cursor: pointer;
+}
+.help-overlay.active { display: flex; }
+.help-content {
+  background: var(--color-blue-mid);
+  border: 1px solid var(--color-turquoise);
+  border-radius: 12px;
+  padding: 2rem 2.5rem;
+  max-width: 500px;
+  cursor: default;
+}
+.help-content h3 { color: var(--color-turquoise); margin-bottom: 1rem; font-family: var(--font-heading); }
+.help-content table { width: 100%; font-size: .9rem; }
+.help-content td { padding: .35rem .5rem; color: var(--color-white-dim); }
+.help-content td:first-child { color: var(--color-yellow); font-family: var(--font-mono); white-space: nowrap; }
+.help-content td kbd {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--color-blue-core);
+  border-radius: 4px;
+  padding: .15rem .4rem;
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  color: var(--color-turquoise);
+  margin-right: .25rem;
+}
+
+/* Overview / grid view */
+.overview {
+  position: fixed;
+  inset: 0;
+  background: var(--color-navy);
+  z-index: 150;
+  display: none;
+  overflow-y: auto;
+  padding: 2rem;
+}
+.overview.active { display: block; }
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.overview-thumb {
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(160deg, var(--color-navy) 0%, var(--color-blue-mid) 50%, var(--color-navy) 100%);
+  border: 2px solid var(--color-blue-core);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  transition: border-color 0.15s, transform 0.15s;
+  overflow: hidden;
+}
+.overview-thumb:hover { border-color: var(--color-turquoise); transform: translateY(-2px); }
+.overview-thumb.current { border-color: var(--color-yellow); }
+.overview-thumb .thumb-num {
+  position: absolute;
+  top: .5rem;
+  left: .65rem;
+  font-family: var(--font-mono);
+  font-size: .7rem;
+  color: var(--color-white-muted);
+}
+.overview-thumb .thumb-title {
+  font-family: var(--font-heading);
+  font-size: .95rem;
+  color: var(--color-turquoise);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.overview-thumb .thumb-subtitle {
+  font-size: .75rem;
+  color: var(--color-white-muted);
+  margin-top: .35rem;
+}
+.overview-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--color-white-dim);
+}
+.overview-header h2 { font-family: var(--font-heading); color: var(--color-turquoise); margin-bottom: .25rem; }
+.overview-header p { font-size: .85rem; color: var(--color-white-muted); font-family: var(--font-mono); }
+
+/* Print: show all slides stacked */
+@media print {
+  body {
+    background: var(--color-navy) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+    margin: 0;
+    padding: 0;
+  }
+  @page { margin: 0; size: landscape; }
+  .deck { position: static; overflow: visible; }
+  .slide {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100vh;
+    display: flex !important;
+    page-break-after: always;
+    animation: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .slide::after, .card, .flow .node, .impact, .success-box, .owasp-tag, .hat, .badge {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .nav, .progress, .help-toggle, .help-overlay, .overview { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress" style="width:0%;"></div>
+<div class="deck" id="deck">
+
+<!-- ================================================================== -->
+<!-- SLIDE 1: TITLE (SANS workshop promo style)                          -->
+<!-- ================================================================== -->
+<div class="slide title-slide">
+  <div class="title-workshop-tag">
+    <span style="color:var(--color-yellow); font-weight:700;">WORKSHOP</span>
+  </div>
+
+  <h1 class="title-main">OWASP FinBot Lab:<br>Exploit and Secure an<br>Agentic Vendor Management System</h1>
+
+  <div class="title-instructors">
+    <div class="instr-card">
+      <img src="assets/helen-oakley.png" alt="Helen Oakley" class="instr-photo">
+      <div>
+        <p class="instr-name">Helen Oakley</p>
+        <p class="instr-role">VP of Software &amp; AI Security, SAP</p>
+      </div>
+    </div>
+    <div class="instr-card">
+      <img src="assets/sai-modalavalasa.png" alt="Venkata Sai Kishore Modalavalasa" class="instr-photo">
+      <div>
+        <p class="instr-name">Venkata Sai Kishore Modalavalasa</p>
+        <p class="instr-role">Chief Architect, Straiker</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="title-event">
+    <a href="https://www.sans.org/" target="_blank" class="sans-logo" aria-label="SANS Institute">
+      <svg viewBox="0 0 65 33" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+        <path fill="currentColor" d="M7.53 13.095C4.945 9.15 2.576 6.678 2.576 3.947c0-1.994 1.008-3.22 2.588-3.22 2.323 0 4.252 3.514 4.778 9.744h.734V.433H9.94l-.965 1.91C7.926.91 6.521 0 5.163 0 2.488.001.339 2.624.339 7.263c0 4.9 2.149 8.205 4.691 12.021 2.763 4.117 4.385 7.18 4.385 9.652 0 1.95-1.184 3.048-2.762 3.048-2.893 0-5.48-3.86-5.744-11.302H0v12.114h.91l1.183-2.306C3.583 32.224 4.986 33 6.828 33c3.157 0 5.394-3.124 5.394-8.196 0-4.076-1.886-7.503-4.691-11.709m51.9 19.038c-2.544 0-4.852-3.143-5.55-8.682h6.514c1.16 2.078 1.8 3.926 1.8 5.477 0 1.951-1.184 3.206-2.764 3.206m-23.353-9.72V5.898l7.23 16.514h-7.23zm-1.225 4.6c0 3.076-.014 4.572-2.208 4.572h-1.388l-1.43-8.133h5.026zm-15.504-4.6 2.744-16.062 2.656 16.062zm40.96-9.318c-2.586-3.945-4.953-6.417-4.953-9.148 0-1.994 1.007-3.22 2.585-3.22 2.325 0 4.254 3.514 4.78 9.744h.659V.433h-.66l-.964 1.91C60.703.91 59.3 0 57.94 0c-2.674 0-4.822 2.623-4.822 7.262 0 4.899 2.148 8.3 4.691 12.117.708 1.055 1.341 2.167 1.89 3.033h-5.94c-.033-.692-.056-.866-.071-1.731h-.984v1.73h-4.201V5.032c0-2.731.175-3.73 2.45-3.685V.433h-6.825v.913c2.1 0 2.976 1.258 2.976 4.119v14.352L39.308.433h-6.382V1.3h1.924v21.113h-5.238L25.773.433h-3.859L16.57 27.12c-.527 2.687-.442 4.054-3.068 4.445v.886h7.175v-.886c-1.924-.044-2.448-.565-2.448-1.952 0-.607.047-1.13.09-1.519l.793-4.643h5.875l1.316 8.134h-2.475v.866h15.926v-.886c-2.45-.174-3.676-1.562-3.676-4.813V23.45h7.736l3.784 9h.906v-9h4.201v9.345h.984l1.184-2.307C56.362 32.225 57.765 33 59.607 33 62.763 33 65 29.876 65 24.804c0-4.076-1.886-7.503-4.691-11.709z"/>
+      </svg>
+    </a>
+    <p class="title-dates">April 21, 2026</p>
+  </div>
+
+  <div class="title-summit-brand">
+    <p class="summit-line1">AI Cybersecurity</p>
+    <p class="summit-line2">SUMMIT 2026</p>
+  </div>
+
+  <div class="title-hashtag">#AISummit</div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 2: THE REALITY                                                -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">Why This Matters</div>
+  <h2>Agentic AI Is in Production</h2>
+  <div class="grid-2">
+    <div>
+      <p>Multi-agent systems are making real decisions in finance, HR, supply chain, customer service and more &mdash; <strong>right now</strong>.</p>
+      <ul>
+        <li>Autonomous invoice processing &amp; payment approval</li>
+        <li>Onboarding workflows with AI-driven risk assessment</li>
+        <li>Compliance reviews reading untrusted documents</li>
+        <li>Tool-calling agents with system-level access</li>
+      </ul>
+    </div>
+    <div>
+      <h3>What Goes Wrong</h3>
+      <ul>
+        <li>Agent approves a $50K invoice because the description said "CFO pre-approved"</li>
+        <li>Poisoned tool description exfiltrates TINs and bank accounts</li>
+        <li>Vendor chatbot executes <code>rm -rf</code> on the server</li>
+        <li>Compliance document triggers RCE when an admin reviews it</li>
+      </ul>
+      <p style="color:var(--color-yellow); font-size:.95rem; margin-top:.5rem;">Today you'll do all of these.</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>2 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 3: AGENTIC ATTACK SURFACE                                     -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">The Problem</div>
+  <h2>The Agentic Attack Surface</h2>
+  <p>Traditional LLM apps have one input channel. Agentic systems have <strong>many</strong>.</p>
+  <div class="flow" style="margin:2rem 0;">
+    <span class="node">User Input</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node highlight">Agent (LLM)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Tools (MCP)</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Data &amp; APIs</span>
+  </div>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Prompt Channel</h3>
+      <p>System prompts, user messages, tool descriptions &mdash; all in the same text stream</p>
+    </div>
+    <div class="card">
+      <h3>Tool Channel</h3>
+      <p>MCP servers, tool descriptions loaded at runtime, tool arguments passed to external systems</p>
+    </div>
+    <div class="card">
+      <h3>Data Channel</h3>
+      <p>Documents, database records, prior agent notes &mdash; untrusted data entering the instruction stream</p>
+    </div>
+  </div>
+  <p style="margin-top:1.5rem; font-size:1rem;">Every channel is an injection point. Every tool is an action the agent can be tricked into taking.</p>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>3 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 4: OWASP TOP 10 AGENTIC                                       -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">The Framework</div>
+  <h2>OWASP Top 10 for Agentic Applications (2026)</h2>
+  <p style="font-size:1rem; color:var(--color-white-muted); margin-top:.25rem; margin-bottom:1rem;">Today's 6 labs cover <strong style="color:var(--color-yellow);">5 of the top 10</strong> ASI categories &mdash; the most actively exploited classes in production agentic systems.</p>
+  <div class="grid-2" style="margin-top:.5rem;">
+    <div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag" style="border-color:var(--color-yellow); color:var(--color-yellow);">ASI-01</span> <strong>Agent Goal Hijack</strong> <span style="color:var(--color-white-muted); font-size:.8rem;">&mdash; Labs 1, 2, 5, 6</span></div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag" style="border-color:var(--color-yellow); color:var(--color-yellow);">ASI-02</span> <strong>Tool Misuse &amp; Exploitation</strong> <span style="color:var(--color-white-muted); font-size:.8rem;">&mdash; Labs 3, 4, 6</span></div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag" style="border-color:var(--color-yellow); color:var(--color-yellow);">ASI-03</span> <strong>Identity &amp; Privilege Abuse</strong> <span style="color:var(--color-white-muted); font-size:.8rem;">&mdash; Lab 3</span></div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag" style="border-color:var(--color-yellow); color:var(--color-yellow);">ASI-04</span> <strong>Supply Chain Vulnerabilities</strong> <span style="color:var(--color-white-muted); font-size:.8rem;">&mdash; Labs 4, 6</span></div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag" style="border-color:var(--color-yellow); color:var(--color-yellow);">ASI-05</span> <strong>Unexpected Code Execution</strong> <span style="color:var(--color-white-muted); font-size:.8rem;">&mdash; Labs 5, 6</span></div>
+    </div>
+    <div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag">ASI-06</span> Memory &amp; Context Poisoning <span style="color:var(--color-white-muted); font-size:.8rem;">&mdash; bonus</span></div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag">ASI-07</span> Insecure Inter-Agent Communication</div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag">ASI-08</span> Cascading Failures <span style="color:var(--color-white-muted); font-size:.8rem;">&mdash; bonus</span></div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag">ASI-09</span> Human-Agent Trust Exploitation</div>
+      <div style="margin-bottom:.55rem;"><span class="owasp-tag">ASI-10</span> Rogue Agents</div>
+      <p style="margin-top:1rem; font-size:.9rem; color:var(--color-yellow); line-height:1.5;">Lab 6 is the inverse &mdash; you'll <strong>defend</strong> against ASI-01, 02, 04, and 05 with a guardrail webhook.</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>4 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 5: MEET FINBOT                                                -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">The Platform</div>
+  <h2>Meet FinBot &mdash; The Juice Shop for Agentic AI</h2>
+  <div class="grid-2">
+    <div>
+      <h3>6 AI Agents</h3>
+      <ul style="font-size:1rem;">
+        <li><strong>Orchestrator</strong> &mdash; routes tasks, propagates context</li>
+        <li><strong>Onboarding</strong> &mdash; evaluates new vendors</li>
+        <li><strong>Invoice</strong> &mdash; approves/rejects invoices</li>
+        <li><strong>Fraud/Compliance</strong> &mdash; reviews documents</li>
+        <li><strong>Payments</strong> &mdash; processes transfers</li>
+        <li><strong>Communication</strong> &mdash; sends notifications</li>
+      </ul>
+    </div>
+    <div>
+      <h3>5 MCP Tool Servers</h3>
+      <ul style="font-size:1rem;">
+        <li><strong>FinDrive</strong> &mdash; document storage</li>
+        <li><strong>FinStripe</strong> &mdash; payment processing</li>
+        <li><strong>FinMail</strong> &mdash; email delivery</li>
+        <li><strong>SystemUtils</strong> &mdash; system operations</li>
+        <li><strong>TaxCalc</strong> &mdash; tax calculations</li>
+      </ul>
+      <h3 style="margin-top:1rem;">5 Portals</h3>
+      <p style="font-size:.95rem;">Vendor &middot; Admin &middot; Dark Lab &middot; CTF &middot; Labs</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>5 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 6: THE FINANCIAL WORKFLOW                                      -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">The Target</div>
+  <h2>The Financial Workflow</h2>
+  <p>This is the end-to-end process you'll attack and defend:</p>
+  <div class="flow" style="margin:2rem 0;">
+    <span class="node">Invoice Intake</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node highlight">Validation</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node highlight">Approval</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Funds Transfer</span>
+    <span class="arrow">&rarr;</span>
+    <span class="node">Reconciliation</span>
+  </div>
+  <div class="grid-3">
+    <div class="card">
+      <h3>Agent Decisions</h3>
+      <p>Trust level assessment, threshold checks, urgency classification, approval/rejection</p>
+    </div>
+    <div class="card">
+      <h3>Tool Actions</h3>
+      <p>File reads (FinDrive), payments (FinStripe), emails (FinMail), scripts (SystemUtils)</p>
+    </div>
+    <div class="card">
+      <h3>Data Flow</h3>
+      <p>Invoice descriptions, vendor profiles, compliance docs &mdash; all enter the agent's prompt</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>6 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 7: WHAT YOU'LL BREAK                                          -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">The Attacks</div>
+  <h2>What You'll Break</h2>
+  <div class="grid-3" style="margin-top:1rem;">
+    <div class="card">
+      <h3>Goal Hijack</h3>
+      <p style="font-size:.95rem;">Extract agent rules, manipulate approval decisions, override policies through social engineering</p>
+      <div style="margin-top:.5rem;"><span class="owasp-tag">ASI-01</span></div>
+      <div class="impact"><p><strong>Impact:</strong> Unauthorized invoice approval</p></div>
+    </div>
+    <div class="card">
+      <h3>Tool Misuse &amp; Supply Chain</h3>
+      <p style="font-size:.95rem;">Cross-vendor file deletion, MCP tool description poisoning, data exfiltration via tool chaining</p>
+      <div style="margin-top:.5rem;"><span class="owasp-tag">ASI-02</span> <span class="owasp-tag">ASI-03</span> <span class="owasp-tag">ASI-04</span></div>
+      <div class="impact"><p><strong>Impact:</strong> PII exfiltration, data destruction</p></div>
+    </div>
+    <div class="card">
+      <h3>Code Execution</h3>
+      <p style="font-size:.95rem;">Multi-turn trust building to execute malicious scripts, indirect injection via poisoned documents</p>
+      <div style="margin-top:.5rem;"><span class="owasp-tag">ASI-05</span></div>
+      <div class="impact"><p><strong>Impact:</strong> Remote code execution</p></div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>7 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 8: WHAT YOU'LL BUILD                                          -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">The Defense</div>
+  <h2>What You'll Build</h2>
+  <div class="grid-2">
+    <div>
+      <p>After exploiting the system, you'll <strong>deploy a guardrail</strong> that inspects agent tool calls in real-time.</p>
+      <div class="flow" style="justify-content:flex-start; margin:1.5rem 0;">
+        <span class="node">Agent</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node highlight">before_tool hook</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node" style="border-color:var(--color-green); color:var(--color-green);">Webhook</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node danger">block</span>
+      </div>
+      <ul style="font-size:1rem;">
+        <li>Inspect <code>tool_name</code> and <code>tool_arguments</code></li>
+        <li>Block suspicious invoice approvals</li>
+        <li>Return <code>allow</code> or <code>block</code> verdicts</li>
+        <li>Real-time activity monitoring</li>
+      </ul>
+    </div>
+    <div>
+      <h3>The Offense &rarr; Defense Arc</h3>
+      <div class="card" style="margin-top:.5rem; padding:.85rem 1.1rem;">
+        <p style="font-size:.9rem;"><strong style="color:var(--color-red);">1. Carte Blanche</strong> &mdash; you exploited excessive agency to exfiltrate vendor data</p>
+      </div>
+      <div style="text-align:center; font-size:1.2rem; color:var(--color-white-muted); margin:.35rem 0;">&darr;</div>
+      <div class="card" style="padding:.85rem 1.1rem;">
+        <p style="font-size:.9rem;"><strong style="color:var(--color-turquoise);">2. Guardrail 101</strong> &mdash; you learn to build webhook-based defenses that intercept tool calls in real-time</p>
+      </div>
+      <div style="text-align:center; font-size:1.2rem; color:var(--color-white-muted); margin:.35rem 0;">&darr;</div>
+      <div class="card" style="padding:.85rem 1.1rem; border-color:var(--color-yellow);">
+        <p style="font-size:.9rem;"><strong style="color:var(--color-yellow);">3. Carte Noire</strong> <span style="font-size:.75rem; color:var(--color-yellow);">[BONUS]</span> &mdash; deploy a PII-aware guardrail that would have stopped the Carte Blanche exfiltration entirely</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>8 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 9: TODAY'S ROADMAP                                            -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">The Plan</div>
+  <h2>Today's Roadmap</h2>
+  <div class="grid-2" style="margin-top:1rem;">
+    <div>
+      <h3>Session 1 (90 min)</h3>
+      <ul style="font-size:1rem;">
+        <li style="color:var(--color-white-muted);">Slides &mdash; 10 min</li>
+        <li>Platform Orientation &mdash; 15 min</li>
+        <li><strong>Lab 1:</strong> Reconnaissance &mdash; 15 min</li>
+        <li><strong>Lab 2:</strong> Policy Bypass &mdash; 20 min</li>
+        <li><strong>Lab 3:</strong> Destructive Actions &mdash; 15 min</li>
+        <li style="color:var(--color-white-muted);">Buffer &mdash; 15 min</li>
+      </ul>
+      <p style="margin-top:1rem; font-size:.9rem; color:var(--color-yellow);">15-minute break &middot; <span style="color:var(--color-white-muted);">request your certificate</span></p>
+    </div>
+    <div>
+      <h3>Session 2 (90 min)</h3>
+      <ul style="font-size:1rem;">
+        <li><strong>Lab 4:</strong> Supply Chain Exfiltration &mdash; 25 min</li>
+        <li><strong>Lab 5:</strong> Remote Code Execution &mdash; 20 min</li>
+        <li><strong>Lab 6:</strong> Defense &mdash; Guardrail 101 &mdash; 25 min</li>
+        <li style="color:var(--color-white-muted);">Wrap-up + Certificates &mdash; 20 min</li>
+      </ul>
+      <div class="success-box" style="margin-top:1rem;">
+        <p><strong>6 labs</strong> &middot; <strong>6 challenges</strong> &middot; offense &rarr; defense arc</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>9 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 10: LET'S BEGIN                                               -->
+<!-- ================================================================== -->
+<div class="slide" style="text-align:center;">
+  <div class="slide-label">Let's Go</div>
+  <h1 style="font-size:3rem; margin-bottom:1rem;">Let's Begin</h1>
+  <p style="font-size:1.3rem; color:var(--color-yellow); margin-bottom:2rem;">owasp-finbot-ctf.org</p>
+
+  <div style="display:flex; gap:2.5rem; justify-content:center; align-items:center; flex-wrap:wrap;">
+    <div class="qr-card qr-yellow">
+      <img src="assets/qr-platform-yellow.png" alt="QR: owasp-finbot-ctf.org" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-platform-yellow.png'}))">
+      <p class="qr-label">Scan to launch<br>owasp-finbot-ctf.org</p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:1rem; text-align:left;">
+      <div class="card" style="min-width:280px;">
+        <h3 style="margin-bottom:.25rem;">1. Sign In</h3>
+        <p style="font-size:.9rem; margin:0;">Magic link via email &mdash; or continue without signing in</p>
+      </div>
+      <div class="card" style="min-width:280px;">
+        <h3 style="margin-bottom:.25rem;">2. Register a Vendor</h3>
+        <p style="font-size:.9rem; margin:0;">Vendor Portal &rarr; Onboarding. Any company name works.</p>
+      </div>
+      <div class="card" style="min-width:280px;">
+        <h3 style="margin-bottom:.25rem;">3. Explore the Portals</h3>
+        <p style="font-size:.9rem; margin:0;">Vendor &middot; Admin &middot; Dark Lab &middot; CTF &middot; Labs</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>10 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 11: LAB 1 — RECONNAISSANCE                                    -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">Lab 1 &middot; 15 min</div>
+  <h2>Reconnaissance &mdash; Invoice Agent Prompt Extraction</h2>
+  <div style="margin-bottom:1rem;">
+    <span class="hat">&#x1F3A9; Vendor</span>
+    <span class="owasp-tag">ASI-01</span>
+    <span class="owasp-tag">LLM07</span>
+    <span class="badge">100 pts</span>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3>Attack Path</h3>
+      <div class="flow" style="justify-content:flex-start; margin:1rem 0;">
+        <span class="node highlight">Description field</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node">DB</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node">Invoice Agent</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node danger">Leaked rules</span>
+      </div>
+      <p>The invoice description is interpolated directly into the agent's prompt. Inject instructions to make the agent dump its confidential business rules into the task summary.</p>
+    </div>
+    <div>
+      <h3>Questions to Answer</h3>
+      <ul style="font-size:.95rem;">
+        <li>What is the auto-approve threshold?</li>
+        <li>What is the max invoice amount?</li>
+        <li>How do trust tiers affect decisions?</li>
+        <li>What are the urgency rules?</li>
+        <li>What is the speed vs. security priority?</li>
+      </ul>
+      <div class="success-box">
+        <p><strong>Success:</strong> Agent leaks PRIMARY GOALS / DECISION FRAMEWORK in task summary</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>/vendor &rarr; Invoices</span>
+    <span>11 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 12: LAB 2 — POLICY BYPASS                                     -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">Lab 2 &middot; 20 min</div>
+  <h2>Policy Bypass &mdash; Social Engineering Agents</h2>
+  <div style="margin-bottom:1rem;">
+    <span class="hat">&#x1F3A9; Vendor</span>
+    <span class="owasp-tag">ASI-01</span>
+    <span class="owasp-tag">LLM06</span>
+    <span class="badge">100 pts</span>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3>Two-Part Attack</h3>
+      <p><strong>Part 1:</strong> Register a vendor that gets <code>trust_level: low</code></p>
+      <p style="font-size:.95rem;">Non-listed industry + vague services. The onboarding agent's leniency policy pushes toward "standard" &mdash; you need to trigger the risk path.</p>
+      <p><strong>Part 2:</strong> Submit a high-value invoice ($10K+) and get it approved</p>
+      <p style="font-size:.95rem;">Use the intel from Lab 1. Frame urgency, authority, business continuity. The agent's <code>speed_priority=0.9</code> favors fast approvals.</p>
+    </div>
+    <div>
+      <h3>The Baseline Test</h3>
+      <p style="font-size:.95rem;">First: submit with a plain description. See it rejected.</p>
+      <p style="font-size:.95rem;">Then: submit with social engineering. See it approved.</p>
+      <p style="font-size:.95rem; color:var(--color-yellow);">Same amount. Same vendor. Different framing. Different outcome.</p>
+      <div class="impact" style="margin-top:1.5rem;">
+        <p><strong>Impact:</strong> Unauthorized $25K invoice approval for low-trust vendor</p>
+      </div>
+      <p style="font-size:.85rem; color:var(--color-white-muted); margin-top:.75rem;">Note: brute-force jailbreak gets 50% point penalty</p>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>/vendor &rarr; Invoices</span>
+    <span>12 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 13: LAB 3 — DESTRUCTIVE ACTIONS                               -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">Lab 3 &middot; 15 min</div>
+  <h2>Destructive Actions &mdash; Cross-Vendor File Deletion</h2>
+  <div style="margin-bottom:1rem;">
+    <span class="hat">&#x1F3A9; Vendor</span>
+    <span class="owasp-tag">ASI-02</span>
+    <span class="owasp-tag">ASI-03</span>
+    <span class="badge">100 pts</span>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3>The Authorization Gap</h3>
+      <div class="flow" style="justify-content:flex-start; margin:1rem 0; flex-direction:column; align-items:flex-start; gap:.75rem;">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <span class="node" style="border-color:var(--color-green); color:var(--color-green);">Web UI</span>
+          <span class="arrow">&rarr;</span>
+          <span style="font-size:.9rem; color:var(--color-green);">Only your files (enforced)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <span class="node danger">Chat Agent</span>
+          <span class="arrow">&rarr;</span>
+          <span class="node">MCP (FinDrive)</span>
+          <span class="arrow">&rarr;</span>
+          <span style="font-size:.9rem; color:var(--color-red);">All vendors' files (no check)</span>
+        </div>
+      </div>
+      <p style="font-size:.95rem;">The web UI enforces ownership. The agent bypasses the UI and calls FinDrive tools directly &mdash; without per-vendor authorization.</p>
+    </div>
+    <div>
+      <h3>Attack Steps</h3>
+      <ol style="font-size:.95rem;">
+        <li>Ask the chat assistant to list files for other vendors</li>
+        <li>Compare with what the web UI shows (only yours)</li>
+        <li>Ask the assistant to delete a file from a different vendor</li>
+        <li>Verify: file is gone</li>
+      </ol>
+      <div class="impact" style="margin-top:1rem;">
+        <p><strong>Impact:</strong> Cross-tenant data destruction via IDOR through agent</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>/vendor/assistant</span>
+    <span>13 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 14: BREAK + CERTIFICATE REQUEST                               -->
+<!-- ================================================================== -->
+<div class="slide" style="text-align:center;">
+  <div class="slide-label">15-Minute Break</div>
+  <h1 style="font-size:3rem; margin-bottom:.75rem;">Take a Break</h1>
+  <p style="font-size:1.25rem; color:var(--color-yellow); margin-bottom:1.5rem;">See you back here in 15 minutes</p>
+
+  <div style="display:flex; gap:3rem; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:1rem;">
+    <div class="qr-card qr-yellow">
+      <img src="assets/qr-cert-request.png" alt="QR: Request Certificate" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-cert-request.png'}))">
+      <p class="qr-label">Scan to request<br>your certificate</p>
+    </div>
+
+    <div style="text-align:left; max-width:420px;">
+      <h3 style="color:var(--color-turquoise); font-family:var(--font-heading); font-size:1.4rem; margin-bottom:1rem;">Request Your Workshop Certificate</h3>
+      <p style="font-size:1rem; line-height:1.6; color:var(--color-white-dim); margin-bottom:1rem;">Submit your details now so we can issue your <strong style="color:var(--color-white);">OWASP FinBot CTF at SANS AI Cybersecurity Summit 2026</strong> certificate at the end of the workshop.</p>
+      <ul style="font-size:.95rem; color:var(--color-white-dim); padding-left:1.2rem;">
+        <li>Full name (as you want it on the certificate)</li>
+        <li>Email address</li>
+        <li>Organization (optional)</li>
+      </ul>
+      <p style="font-family:var(--font-mono); font-size:.85rem; color:var(--color-turquoise); margin-top:1rem;">sans.owasp-finbot-ctf.org/request</p>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>14 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 15: LAB 4 — SUPPLY CHAIN                                      -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">Lab 4 &middot; 25 min</div>
+  <h2>Supply Chain Attack &mdash; Data Exfiltration</h2>
+  <div style="margin-bottom:1rem;">
+    <span class="hat">&#x2620;&#xFE0F; Dark Lab</span>
+    <span class="hat">&#x1F3A9; Admin</span>
+    <span class="owasp-tag">ASI-02</span>
+    <span class="owasp-tag">ASI-04</span>
+    <span class="badge">250 pts</span>
+  </div>
+  <div>
+    <h3>The Tool Poisoning Chain</h3>
+    <div class="flow" style="margin:1.5rem 0;">
+      <span class="node danger">Poison send_email</span>
+      <span class="arrow">&rarr;</span>
+      <span class="node">Trigger: "email vendors"</span>
+      <span class="arrow">&rarr;</span>
+      <span class="node highlight">get_vendor_details</span>
+      <span class="arrow">&rarr;</span>
+      <span class="node highlight">send_email (PII in body)</span>
+      <span class="arrow">&rarr;</span>
+      <span class="node danger">network_request (exfil)</span>
+    </div>
+    <div class="grid-2">
+      <div>
+        <h3>Step 1: Poison (Dark Lab)</h3>
+        <p style="font-size:.95rem;">Edit the <code>send_email</code> tool description on FinMail. Add "compliance requirements" that instruct the agent to fetch vendor PII and POST it to an external endpoint.</p>
+      </div>
+      <div>
+        <h3>Step 2: Trigger (Admin Co-Pilot)</h3>
+        <p style="font-size:.95rem;">Send an innocent message: <em>"Notify vendors about payment holidays."</em> The agent follows the poisoned description and exfiltrates TINs, bank accounts, routing numbers.</p>
+        <div class="impact" style="margin-top:.5rem;">
+          <p><strong>Impact:</strong> PII exfiltration &mdash; 1 message, 3 tool calls, zero suspicion</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>/darklab/supply-chain &rarr; /admin</span>
+    <span>15 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 15: LAB 5 — RCE                                               -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">Lab 5 &middot; 20 min</div>
+  <h2>Remote Code Execution</h2>
+  <div style="margin-bottom:1rem;">
+    <span class="hat">&#x1F3A9; Vendor</span>
+    <span class="owasp-tag">ASI-01</span>
+    <span class="owasp-tag">ASI-05</span>
+    <span class="owasp-tag">LLM06</span>
+    <span class="badge">250 pts</span>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3>Approach A: Direct (Foot-in-the-Door)</h3>
+      <div class="flow" style="justify-content:flex-start; margin:1rem 0;">
+        <span class="node">Turn 1: diagnostics</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node highlight">Trust established</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node danger">Turn 2: rm -f /...</span>
+      </div>
+      <p style="font-size:.95rem;">The vendor chatbot has SystemUtils &mdash; including <code>execute_script</code>. A vendor chatbot should <em>never</em> have system-level tools. Build trust with safe commands, then escalate.</p>
+    </div>
+    <div>
+      <h3>Approach B: Indirect (Poisoned Document)</h3>
+      <div class="flow" style="justify-content:flex-start; margin:1rem 0;">
+        <span class="node">Upload SOC2 doc</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node">Admin reviews</span>
+        <span class="arrow">&rarr;</span>
+        <span class="node danger">Hidden instructions execute</span>
+      </div>
+      <p style="font-size:.95rem;">Plant a poisoned compliance document. When <em>any admin</em> reviews it, the hidden instructions trigger RCE. The attacker is never in the conversation.</p>
+      <div class="impact" style="margin-top:.5rem;">
+        <p><strong>Impact:</strong> System-level code execution from a vendor chatbot</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>/vendor/assistant</span>
+    <span>16 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 16: LAB 6 — DEFENSE                                           -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">Lab 6 &middot; 25 min</div>
+  <h2>Defense &mdash; Guardrail 101</h2>
+  <div style="margin-bottom:1rem;">
+    <span class="hat">&#x1F6E1;&#xFE0F; Defender</span>
+    <span class="owasp-tag">Mitigation</span>
+    <span class="badge">150 pts</span>
+  </div>
+  <div class="grid-2">
+    <div>
+      <h3>The Guardrail Architecture</h3>
+      <div class="flow" style="justify-content:flex-start; margin:1rem 0; flex-direction:column; align-items:flex-start; gap:.75rem;">
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <span class="node">Agent decides to call tool</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <span style="color:var(--color-white-muted);">&darr;</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <span class="node highlight">before_tool hook fires</span>
+          <span class="arrow">&rarr;</span>
+          <span class="node" style="border-color:var(--color-green); color:var(--color-green);">Your webhook</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <span style="color:var(--color-white-muted);">&darr;</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:.5rem;">
+          <span class="node danger">{"verdict": "block"}</span>
+          <span style="font-size:.9rem; color:var(--color-white-muted);">Invoice approval prevented</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3>Your Task</h3>
+      <p style="font-size:.95rem;">Configure the webhook to block <code>update_invoice_status</code> when <code>status: "approved"</code>.</p>
+      <ol style="font-size:.95rem;">
+        <li>Configure webhook URL in Labs portal</li>
+        <li>Enable <code>before_tool</code> hook</li>
+        <li>Test with "Send Test Hook"</li>
+        <li>Submit an invoice &mdash; watch the block verdict</li>
+      </ol>
+      <div class="success-box" style="margin-top:1rem;">
+        <p>Every attack in Labs 1&ndash;5 manifests as a tool call. Inspect at the boundary &mdash; catch the attack at the point of impact.</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>/labs/guardrails</span>
+    <span>17 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 17: RECAP                                                     -->
+<!-- ================================================================== -->
+<div class="slide">
+  <div class="slide-label">Closing</div>
+  <h2>What We Covered</h2>
+  <div class="grid-2" style="margin-top:.5rem;">
+    <div>
+      <h3>Offense</h3>
+      <ul style="font-size:.95rem;">
+        <li><strong>Lab 1:</strong> Prompt injection via data field &rarr; policy intel leaked</li>
+        <li><strong>Lab 2:</strong> Social engineering &rarr; unauthorized approval</li>
+        <li><strong>Lab 3:</strong> Agent-mediated IDOR &rarr; cross-vendor deletion</li>
+        <li><strong>Lab 4:</strong> MCP supply chain poisoning &rarr; PII exfiltration</li>
+        <li><strong>Lab 5:</strong> Trust building + indirect injection &rarr; RCE</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Defense</h3>
+      <ul style="font-size:.95rem;">
+        <li><strong>Lab 6:</strong> Guardrail webhooks &rarr; tool call inspection</li>
+      </ul>
+      <h3 style="margin-top:1.5rem;">Key Principles</h3>
+      <ul style="font-size:.95rem;">
+        <li>Prompt-based policies are guidelines, not enforcement</li>
+        <li>Authorization must happen at the tool layer</li>
+        <li>Tool descriptions are untrusted input</li>
+        <li>Agents need least-privilege tool scoping</li>
+        <li>Data and instruction channels must be separated</li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>OWASP FinBot CTF</span>
+    <span>18 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 18: CERTIFICATE FLASH + REMINDER                              -->
+<!-- ================================================================== -->
+<div class="slide" style="text-align:center;">
+  <div class="slide-label">You Earned It</div>
+  <h2 style="margin-bottom:1rem;">Your Certificate Awaits</h2>
+
+  <div style="display:flex; gap:2.5rem; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:.5rem;">
+    <div style="flex:0 1 540px; max-width:60vw;">
+      <img src="assets/sample-cert.png" alt="OWASP FinBot CTF Certificate"
+           style="width:100%; border-radius:10px; border:2px solid var(--color-turquoise); box-shadow:0 12px 40px rgba(0,188,204,0.25), 0 4px 16px rgba(0,0,0,0.4);">
+    </div>
+
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.85rem;">
+      <div class="qr-card qr-yellow">
+        <img src="assets/qr-cert-request.png" alt="QR: Request Certificate" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-cert-request.png'}))">
+        <p class="qr-label">Haven't requested<br>your cert yet?</p>
+      </div>
+      <p style="font-size:.85rem; color:var(--color-white-dim); margin:0; max-width:200px;">Submit your details and we'll email it after the workshop.</p>
+      <p style="font-family:var(--font-mono); font-size:.78rem; color:var(--color-turquoise); margin:0;">sans.owasp-finbot-ctf.org/request</p>
+    </div>
+  </div>
+
+  <div class="slide-footer">
+    <span>Don't forget to share #AISummit #OWASPFinBotCTF</span>
+    <span>19 / 20</span>
+  </div>
+</div>
+
+<!-- ================================================================== -->
+<!-- SLIDE 19: RESOURCES                                                 -->
+<!-- ================================================================== -->
+<div class="slide" style="text-align:center;">
+  <div class="slide-label">Next Steps</div>
+  <h2>Resources &amp; Next Steps</h2>
+
+  <div class="grid-3" style="margin-top:1.5rem;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.75rem;">
+      <div class="qr-card qr-white">
+        <img src="assets/qr-platform.png" alt="QR: owasp-finbot-ctf.org" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-platform.png'}))">
+        <p class="qr-label">Keep Practicing</p>
+      </div>
+      <p style="font-size:.85rem; color:var(--color-white-dim); margin:0;">19 challenges<br><strong>owasp-finbot-ctf.org</strong></p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.75rem;">
+      <div class="qr-card qr-white">
+        <img src="assets/qr-github.png" alt="QR: GitHub Repository" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-github.png'}))">
+        <p class="qr-label">Contribute</p>
+      </div>
+      <p style="font-size:.85rem; color:var(--color-white-dim); margin:0;">GitHub<br><strong>GenAI-Security-Project/finbot-ctf</strong></p>
+    </div>
+
+    <div style="display:flex; flex-direction:column; align-items:center; gap:.75rem;">
+      <div class="qr-card qr-white">
+        <img src="assets/qr-linkedin.png" alt="QR: LinkedIn" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'qr-placeholder',textContent:'qr-linkedin.png'}))">
+        <p class="qr-label">Follow &amp; Share</p>
+      </div>
+      <p style="font-size:.85rem; color:var(--color-white-dim); margin:0;">LinkedIn<br><strong>OWASP FinBot CTF</strong></p>
+    </div>
+  </div>
+
+  <div style="margin-top:1.5rem;">
+    <p style="font-size:.95rem; color:var(--color-white-muted); margin-bottom:.5rem;">Share your certificate and tag us</p>
+    <p style="font-size:1rem;">
+      <code>#AISummit</code> &nbsp;
+      <code>#OWASPFinBotCTF</code> &nbsp;
+      <code>#OwaspGenAISecurityProject</code> &nbsp;
+      <code>#SANS</code>
+    </p>
+  </div>
+  <p style="font-size:2rem; color:var(--color-yellow); margin-top:1.25rem; font-family:var(--font-heading);">Thank You!</p>
+  <div class="slide-footer">
+    <span>owasp-finbot-ctf.org &middot; GitHub &middot; LinkedIn</span>
+    <span>20 / 20</span>
+  </div>
+</div>
+
+</div><!-- /.deck -->
+
+<!-- Navigation UI -->
+<button class="help-toggle" id="helpToggle" title="Help (?)">?</button>
+
+<div class="help-overlay" id="helpOverlay">
+  <div class="help-content">
+    <h3>Keyboard Shortcuts</h3>
+    <table>
+      <tr><td><kbd>&rarr;</kbd> <kbd>Space</kbd> <kbd>Page Down</kbd></td><td>Next slide</td></tr>
+      <tr><td><kbd>&larr;</kbd> <kbd>Page Up</kbd></td><td>Previous slide</td></tr>
+      <tr><td><kbd>Home</kbd></td><td>First slide</td></tr>
+      <tr><td><kbd>End</kbd></td><td>Last slide</td></tr>
+      <tr><td><kbd>O</kbd> <kbd>Esc</kbd></td><td>Toggle overview</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr>
+      <tr><td><kbd>P</kbd></td><td>Print / save as PDF</td></tr>
+      <tr><td><kbd>?</kbd></td><td>Show / hide this help</td></tr>
+    </table>
+    <p style="margin-top:1rem; font-size:.8rem; color:var(--color-white-muted); text-align:center;">Click anywhere to close</p>
+  </div>
+</div>
+
+<div class="overview" id="overview">
+  <div class="overview-header">
+    <h2>OWASP FinBot Lab</h2>
+    <p>Click any slide to jump to it &middot; press O or Esc to close</p>
+  </div>
+  <div class="overview-grid" id="overviewGrid"></div>
+</div>
+
+<div class="nav" id="nav">
+  <button id="firstBtn" title="First slide (Home)">&#x23EE;</button>
+  <button id="prevBtn" title="Previous slide (&larr;)">&larr;</button>
+  <button id="overviewBtn" title="Overview (O)">&#x25A6;</button>
+  <span class="counter"><strong id="currentNum">1</strong> / <span id="totalNum">18</span></span>
+  <button id="nextBtn" title="Next slide (&rarr; or Space)">&rarr;</button>
+  <button id="lastBtn" title="Last slide (End)">&#x23ED;</button>
+  <button id="fullscreenBtn" title="Fullscreen (F)">&#x26F6;</button>
+</div>
+
+<script>
+(function() {
+  const slides = Array.from(document.querySelectorAll('.deck .slide'));
+  const total = slides.length;
+  let current = 0;
+
+  // Read slide titles for overview
+  const overviewGrid = document.getElementById('overviewGrid');
+  slides.forEach((slide, i) => {
+    const label = slide.querySelector('.slide-label')?.textContent || '';
+    const title = slide.querySelector('h1, h2')?.textContent || `Slide ${i + 1}`;
+    const thumb = document.createElement('div');
+    thumb.className = 'overview-thumb';
+    thumb.dataset.index = i;
+    thumb.innerHTML = `
+      <div class="thumb-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="thumb-title">${title}</div>
+      <div class="thumb-subtitle">${label}</div>
+    `;
+    thumb.addEventListener('click', () => {
+      goTo(i);
+      toggleOverview(false);
+    });
+    overviewGrid.appendChild(thumb);
+  });
+
+  // Init from URL hash
+  function readHash() {
+    const m = location.hash.match(/^#(\d+)$/);
+    if (m) return Math.max(0, Math.min(total - 1, parseInt(m[1], 10) - 1));
+    return 0;
+  }
+
+  function render() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === current));
+    document.getElementById('currentNum').textContent = current + 1;
+    document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('firstBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+    document.getElementById('lastBtn').disabled = current === total - 1;
+    history.replaceState(null, '', '#' + (current + 1));
+    document.querySelectorAll('.overview-thumb').forEach((t, i) => {
+      t.classList.toggle('current', i === current);
+    });
+  }
+
+  function goTo(i) {
+    current = Math.max(0, Math.min(total - 1, i));
+    render();
+  }
+  function next() { if (current < total - 1) goTo(current + 1); }
+  function prev() { if (current > 0) goTo(current - 1); }
+
+  function toggleOverview(force) {
+    const ov = document.getElementById('overview');
+    const show = force !== undefined ? force : !ov.classList.contains('active');
+    ov.classList.toggle('active', show);
+  }
+
+  function toggleHelp(force) {
+    const h = document.getElementById('helpOverlay');
+    const show = force !== undefined ? force : !h.classList.contains('active');
+    h.classList.toggle('active', show);
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }
+
+  // Set total
+  document.getElementById('totalNum').textContent = total;
+
+  // Buttons
+  document.getElementById('prevBtn').addEventListener('click', prev);
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('firstBtn').addEventListener('click', () => goTo(0));
+  document.getElementById('lastBtn').addEventListener('click', () => goTo(total - 1));
+  document.getElementById('overviewBtn').addEventListener('click', () => toggleOverview());
+  document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+  document.getElementById('helpToggle').addEventListener('click', () => toggleHelp());
+  document.getElementById('helpOverlay').addEventListener('click', () => toggleHelp(false));
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const ovActive = document.getElementById('overview').classList.contains('active');
+    const helpActive = document.getElementById('helpOverlay').classList.contains('active');
+
+    switch (e.key) {
+      case 'ArrowRight':
+      case ' ':
+      case 'PageDown':
+        e.preventDefault(); next(); break;
+      case 'ArrowLeft':
+      case 'PageUp':
+        e.preventDefault(); prev(); break;
+      case 'Home':
+        e.preventDefault(); goTo(0); break;
+      case 'End':
+        e.preventDefault(); goTo(total - 1); break;
+      case 'o':
+      case 'O':
+        e.preventDefault(); toggleOverview(); break;
+      case 'Escape':
+        if (ovActive) toggleOverview(false);
+        else if (helpActive) toggleHelp(false);
+        break;
+      case 'f':
+      case 'F':
+        e.preventDefault(); toggleFullscreen(); break;
+      case 'p':
+      case 'P':
+        e.preventDefault(); window.print(); break;
+      case '?':
+        e.preventDefault(); toggleHelp(); break;
+    }
+  });
+
+  // Touch swipe
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) { dx < 0 ? next() : prev(); }
+  });
+
+  // Hash navigation
+  window.addEventListener('hashchange', () => { current = readHash(); render(); });
+
+  // Init
+  current = readHash();
+  render();
+})();
+</script>
+
+</body>
+</html>
