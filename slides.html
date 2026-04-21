@@ -482,11 +482,19 @@ code {
   transition: width 0.3s ease;
 }
 
-/* Help overlay */
-.help-toggle {
+/* Top-right controls (Timer + Help) */
+.top-controls {
   position: fixed;
   top: 1rem;
   right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 100;
+}
+
+/* Help overlay */
+.help-toggle {
   background: rgba(0,19,44,0.85);
   border: 1px solid var(--color-blue-core);
   color: var(--color-white-dim);
@@ -495,9 +503,8 @@ code {
   border-radius: 50%;
   cursor: pointer;
   font-family: var(--font-mono);
-  z-index: 100;
   opacity: 0.4;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, color 0.2s;
 }
 .help-toggle:hover { opacity: 1; color: var(--color-turquoise); }
 .help-overlay {
@@ -597,6 +604,289 @@ code {
 .overview-header h2 { font-family: var(--font-heading); color: var(--color-turquoise); margin-bottom: .25rem; }
 .overview-header p { font-size: .85rem; color: var(--color-white-muted); font-family: var(--font-mono); }
 
+/* ============================================================ */
+/* Session timer                                                  */
+/* ============================================================ */
+
+/* Pill button (idle or running) */
+.timer-toggle {
+  background: rgba(0,19,44,0.85);
+  border: 1px solid var(--color-blue-core);
+  color: var(--color-white-dim);
+  height: 2rem;
+  min-width: 2rem;
+  padding: 0 0.65rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0.5;
+  transition: opacity 0.2s, color 0.2s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+.timer-toggle:hover { opacity: 1; color: var(--color-turquoise); border-color: var(--color-turquoise); }
+.timer-toggle .timer-toggle-icon { font-size: 0.95rem; line-height: 1; }
+.timer-toggle .timer-toggle-time {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Running / state-based coloring */
+.timer-toggle.is-running { opacity: 1; color: var(--color-turquoise); border-color: var(--color-turquoise); }
+.timer-toggle.is-paused  { opacity: 1; color: var(--color-white-dim); border-color: var(--color-blue-core); }
+.timer-toggle.is-caution { color: var(--color-yellow); border-color: var(--color-yellow); }
+.timer-toggle.is-warning { color: #ff9a2b; border-color: #ff9a2b; }
+.timer-toggle.is-danger  {
+  color: var(--color-red);
+  border-color: var(--color-red);
+  background: rgba(239,68,68,0.18);
+  animation: timerPulse 0.9s ease-in-out infinite;
+}
+@keyframes timerPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.65); transform: scale(1); }
+  50%      { box-shadow: 0 0 0 8px rgba(239,68,68,0);    transform: scale(1.04); }
+}
+
+/* Full-screen setup / control overlay */
+.timer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,19,44,0.95);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 210;
+  padding: 2rem;
+}
+.timer-overlay.active { display: flex; }
+.timer-panel {
+  background: var(--color-blue-mid);
+  border: 1px solid var(--color-turquoise);
+  border-radius: 14px;
+  padding: 1.75rem 2rem;
+  width: min(560px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.timer-panel h3 {
+  font-family: var(--font-heading);
+  color: var(--color-turquoise);
+  font-size: 1.5rem;
+  margin-bottom: 0.15rem;
+}
+.timer-panel .timer-subtitle {
+  color: var(--color-white-muted);
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  margin-bottom: 1.25rem;
+}
+
+.timer-section { margin-bottom: 1.1rem; }
+.timer-section-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-white-muted);
+  font-family: var(--font-mono);
+  margin-bottom: 0.5rem;
+}
+
+.timer-modes {
+  display: inline-flex;
+  border: 1px solid var(--color-blue-core);
+  border-radius: 7px;
+  padding: 2px;
+  background: rgba(0,19,44,0.5);
+}
+.timer-mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-white-dim);
+  padding: 0.4rem 0.95rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.2s, color 0.2s;
+}
+.timer-mode-btn.active {
+  background: var(--color-turquoise);
+  color: var(--color-navy);
+  font-weight: 600;
+}
+
+.timer-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 0.5rem;
+}
+.timer-preset {
+  background: rgba(0,19,44,0.5);
+  border: 1px solid var(--color-blue-core);
+  color: var(--color-white-dim);
+  padding: 0.55rem 0.25rem;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, transform 0.15s, background 0.15s;
+}
+.timer-preset:hover {
+  border-color: var(--color-turquoise);
+  color: var(--color-turquoise);
+  transform: translateY(-1px);
+}
+.timer-preset.selected {
+  border-color: var(--color-yellow);
+  color: var(--color-yellow);
+  background: rgba(255,175,54,0.1);
+}
+
+.timer-custom { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.timer-custom input {
+  background: rgba(0,19,44,0.5);
+  border: 1px solid var(--color-blue-core);
+  color: var(--color-white);
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  width: 5rem;
+  text-align: center;
+}
+.timer-custom input:focus { outline: none; border-color: var(--color-turquoise); }
+.timer-custom .timer-custom-label {
+  font-size: 0.75rem;
+  color: var(--color-white-muted);
+  font-family: var(--font-mono);
+}
+
+.timer-sound {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-white-dim);
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+.timer-sound input { accent-color: var(--color-turquoise); }
+
+.timer-running-state {
+  background: rgba(0,19,44,0.6);
+  border: 1px solid var(--color-blue-core);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.timer-running-state .timer-big {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--color-turquoise);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.timer-running-state.is-caution .timer-big { color: var(--color-yellow); }
+.timer-running-state.is-warning .timer-big { color: #ff9a2b; }
+.timer-running-state.is-danger  .timer-big { color: var(--color-red); }
+.timer-running-state .timer-meta {
+  font-size: 0.7rem;
+  color: var(--color-white-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+.timer-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+.timer-btn {
+  flex: 1 1 auto;
+  min-width: 100px;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.timer-btn-primary {
+  background: var(--color-turquoise);
+  color: var(--color-navy);
+}
+.timer-btn-primary:hover { background: var(--color-yellow); }
+.timer-btn-secondary {
+  background: transparent;
+  border-color: var(--color-blue-core);
+  color: var(--color-white-dim);
+}
+.timer-btn-secondary:hover { border-color: var(--color-turquoise); color: var(--color-turquoise); }
+.timer-btn-danger {
+  background: transparent;
+  border-color: rgba(239,68,68,0.55);
+  color: var(--color-red);
+}
+.timer-btn-danger:hover { background: rgba(239,68,68,0.15); border-color: var(--color-red); }
+
+/* Completion banner (slides down from top center) */
+.timer-banner {
+  position: fixed;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, var(--color-yellow), #ff8a2b);
+  color: var(--color-navy);
+  padding: 0.85rem 1rem 0.85rem 1.15rem;
+  border-radius: 0 0 12px 12px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  z-index: 220;
+  cursor: pointer;
+  transition: top 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  min-width: 320px;
+  max-width: min(640px, 92vw);
+  border-top: 3px solid var(--color-navy);
+}
+.timer-banner.active { top: 0; }
+.timer-banner .banner-icon { font-size: 1.35rem; line-height: 1; }
+.timer-banner .banner-close {
+  margin-left: auto;
+  background: rgba(0,19,44,0.25);
+  border: none;
+  color: var(--color-navy);
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0;
+}
+.timer-banner .banner-close:hover { background: rgba(0,19,44,0.4); }
+
 /* Print: show all slides stacked */
 @media print {
   body {
@@ -624,7 +914,8 @@ code {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .nav, .progress, .help-toggle, .help-overlay, .overview { display: none !important; }
+  .nav, .progress, .help-toggle, .help-overlay, .overview,
+  .top-controls, .timer-overlay, .timer-banner { display: none !important; }
 }
 </style>
 </head>
@@ -1468,7 +1759,13 @@ code {
 </div><!-- /.deck -->
 
 <!-- Navigation UI -->
-<button class="help-toggle" id="helpToggle" title="Help (?)">?</button>
+<div class="top-controls">
+  <button class="timer-toggle" id="timerToggle" title="Session timer (T)" aria-label="Session timer">
+    <span class="timer-toggle-icon" aria-hidden="true">&#9201;</span>
+    <span class="timer-toggle-time" id="timerToggleTime" hidden></span>
+  </button>
+  <button class="help-toggle" id="helpToggle" title="Help (?)">?</button>
+</div>
 
 <div class="help-overlay" id="helpOverlay">
   <div class="help-content">
@@ -1479,12 +1776,74 @@ code {
       <tr><td><kbd>Home</kbd></td><td>First slide</td></tr>
       <tr><td><kbd>End</kbd></td><td>Last slide</td></tr>
       <tr><td><kbd>O</kbd> <kbd>Esc</kbd></td><td>Toggle overview</td></tr>
+      <tr><td><kbd>T</kbd></td><td>Session timer</td></tr>
       <tr><td><kbd>F</kbd></td><td>Fullscreen</td></tr>
       <tr><td><kbd>P</kbd></td><td>Print / save as PDF</td></tr>
       <tr><td><kbd>?</kbd></td><td>Show / hide this help</td></tr>
     </table>
     <p style="margin-top:1rem; font-size:.8rem; color:var(--color-white-muted); text-align:center;">Click anywhere to close</p>
   </div>
+</div>
+
+<!-- Session timer overlay -->
+<div class="timer-overlay" id="timerOverlay" role="dialog" aria-modal="true" aria-label="Session timer">
+  <div class="timer-panel" id="timerPanel">
+    <h3 id="timerPanelTitle">Session Timer</h3>
+    <p class="timer-subtitle" id="timerPanelSubtitle">Set a duration for this activity</p>
+
+    <div class="timer-running-state" id="timerRunningState" hidden>
+      <div>
+        <div class="timer-big" id="timerRunningBig">00:00</div>
+        <div class="timer-meta" id="timerRunningMeta">Running &middot; Countdown</div>
+      </div>
+      <button class="timer-btn timer-btn-secondary" id="timerAddMinuteBtn" type="button" style="flex:0 0 auto; min-width:0; padding:0.5rem 0.85rem;">+1 min</button>
+    </div>
+
+    <div class="timer-section">
+      <span class="timer-section-label">Mode</span>
+      <div class="timer-modes" role="tablist" aria-label="Timer mode">
+        <button class="timer-mode-btn active" data-mode="down" type="button">Countdown</button>
+        <button class="timer-mode-btn" data-mode="up" type="button">Count up</button>
+      </div>
+    </div>
+
+    <div class="timer-section" id="timerPresetsSection">
+      <span class="timer-section-label">Presets (minutes)</span>
+      <div class="timer-presets" id="timerPresets"></div>
+    </div>
+
+    <div class="timer-section" id="timerCustomSection">
+      <span class="timer-section-label">Custom</span>
+      <div class="timer-custom">
+        <input type="number" id="timerCustomMin" min="0" max="180" value="5" inputmode="numeric" aria-label="Minutes">
+        <span class="timer-custom-label">min</span>
+        <input type="number" id="timerCustomSec" min="0" max="59" value="0" inputmode="numeric" aria-label="Seconds">
+        <span class="timer-custom-label">sec</span>
+      </div>
+    </div>
+
+    <div class="timer-section">
+      <label class="timer-sound">
+        <input type="checkbox" id="timerSound" checked>
+        <span>Play sound when time's up</span>
+      </label>
+    </div>
+
+    <div class="timer-actions">
+      <button class="timer-btn timer-btn-primary"   id="timerStartBtn"  type="button">Start</button>
+      <button class="timer-btn timer-btn-secondary" id="timerPauseBtn"  type="button" hidden>Pause</button>
+      <button class="timer-btn timer-btn-secondary" id="timerResumeBtn" type="button" hidden>Resume</button>
+      <button class="timer-btn timer-btn-danger"    id="timerStopBtn"   type="button" hidden>Stop</button>
+      <button class="timer-btn timer-btn-secondary" id="timerCloseBtn"  type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Timer completion banner -->
+<div class="timer-banner" id="timerBanner" role="alert">
+  <span class="banner-icon" aria-hidden="true">&#9200;</span>
+  <span id="timerBannerText">Time's up &mdash; ready to move to the next step?</span>
+  <button class="banner-close" id="timerBannerClose" aria-label="Dismiss">&times;</button>
 </div>
 
 <div class="overview" id="overview">
@@ -1579,6 +1938,434 @@ code {
     }
   }
 
+  // ----------------------------------------------------------------
+  // Session timer
+  // ----------------------------------------------------------------
+  const Timer = (() => {
+    const PRESETS = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60];
+    const STORAGE_KEY = 'finbotSlides.timer.v1';
+    const $ = (id) => document.getElementById(id);
+
+    let mode = 'down';           // 'down' | 'up'
+    let totalSeconds = 5 * 60;   // configured duration for countdown
+    let elapsedMs = 0;           // accumulated elapsed ms (while paused/stopped)
+    let startedAt = 0;           // Date.now() (wall clock) when last (re)started
+    let running = false;
+    let paused = false;
+    let completed = false;
+    let soundOn = true;
+    let tickId = null;
+    let bannerTimer = null;
+    let audioCtx = null;
+    let hydrating = false;       // true while restoring from storage (suppresses saves)
+
+    // -------- Persistence --------
+    function saveState() {
+      if (hydrating) return;
+      try {
+        const state = {
+          v: 1,
+          mode, totalSeconds, elapsedMs, startedAt,
+          running, paused, completed, soundOn,
+          bannerActive: $('timerBanner').classList.contains('active'),
+          customMin: parseInt($('timerCustomMin').value, 10) || 0,
+          customSec: parseInt($('timerCustomSec').value, 10) || 0,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (_) { /* storage disabled */ }
+    }
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const obj = JSON.parse(raw);
+        return (obj && obj.v === 1) ? obj : null;
+      } catch (_) { return null; }
+    }
+    function clearStorage() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+    }
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function fmt(seconds) {
+      seconds = Math.max(0, Math.floor(seconds));
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+    }
+
+    function currentSeconds() {
+      const now = (running && !paused) ? (Date.now() - startedAt + elapsedMs) : elapsedMs;
+      const elapsedS = now / 1000;
+      return mode === 'down' ? Math.max(0, totalSeconds - elapsedS) : elapsedS;
+    }
+
+    function phase() {
+      if (!running || mode === 'up') return 'normal';
+      const remaining = currentSeconds();
+      if (remaining <= 0) return 'done';
+      const ratio = totalSeconds > 0 ? (remaining / totalSeconds) : 0;
+      if (remaining <= 10) return 'danger';
+      if (ratio <= 0.2)    return 'warning';
+      if (ratio <= 0.5)    return 'caution';
+      return 'normal';
+    }
+
+    function renderPresets() {
+      const host = $('timerPresets');
+      host.innerHTML = '';
+      PRESETS.forEach((mins) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'timer-preset';
+        b.textContent = mins;
+        b.dataset.minutes = mins;
+        b.addEventListener('click', () => {
+          $('timerCustomMin').value = mins;
+          $('timerCustomSec').value = 0;
+          document.querySelectorAll('.timer-preset').forEach(x => x.classList.remove('selected'));
+          b.classList.add('selected');
+        });
+        host.appendChild(b);
+      });
+    }
+
+    function setMode(newMode) {
+      if (running) return; // can't switch while running
+      mode = newMode;
+      document.querySelectorAll('.timer-mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      const isUp = mode === 'up';
+      $('timerPresetsSection').style.display = isUp ? 'none' : '';
+      $('timerCustomSection').style.display  = isUp ? 'none' : '';
+      saveState();
+    }
+
+    function updateToggleUI() {
+      const btn = $('timerToggle');
+      const timeEl = $('timerToggleTime');
+      btn.classList.remove('is-running', 'is-paused', 'is-caution', 'is-warning', 'is-danger');
+      if (!running) {
+        timeEl.hidden = true;
+        timeEl.textContent = '';
+        btn.title = 'Session timer (T)';
+        return;
+      }
+      timeEl.hidden = false;
+      timeEl.textContent = fmt(currentSeconds());
+      if (paused) {
+        btn.classList.add('is-paused');
+        btn.title = `Paused · ${fmt(currentSeconds())}`;
+        return;
+      }
+      btn.classList.add('is-running');
+      const p = phase();
+      if (p === 'caution') btn.classList.add('is-caution');
+      if (p === 'warning') btn.classList.add('is-warning');
+      if (p === 'danger')  btn.classList.add('is-danger');
+      btn.title = (mode === 'down' ? 'Countdown · ' : 'Count up · ') + fmt(currentSeconds());
+    }
+
+    function updatePanelUI() {
+      const box = $('timerRunningState');
+      box.classList.remove('is-caution', 'is-warning', 'is-danger');
+
+      if (running) {
+        box.hidden = false;
+        $('timerRunningBig').textContent = fmt(currentSeconds());
+        const label = mode === 'down' ? 'Countdown' : 'Count up';
+        $('timerRunningMeta').textContent = paused ? `Paused · ${label}` : `Running · ${label}`;
+        const p = phase();
+        if (p === 'caution') box.classList.add('is-caution');
+        if (p === 'warning') box.classList.add('is-warning');
+        if (p === 'danger')  box.classList.add('is-danger');
+        $('timerAddMinuteBtn').hidden = mode !== 'down';
+        $('timerStartBtn').hidden  = true;
+        $('timerPauseBtn').hidden  = paused;
+        $('timerResumeBtn').hidden = !paused;
+        $('timerStopBtn').hidden   = false;
+      } else {
+        box.hidden = true;
+        $('timerStartBtn').hidden  = false;
+        $('timerPauseBtn').hidden  = true;
+        $('timerResumeBtn').hidden = true;
+        $('timerStopBtn').hidden   = true;
+      }
+
+      document.querySelectorAll('.timer-mode-btn').forEach(btn => {
+        btn.disabled = running;
+        btn.style.opacity = running ? '0.5' : '';
+        btn.style.cursor  = running ? 'not-allowed' : 'pointer';
+      });
+    }
+
+    function tick() {
+      if (!running) return;
+      updateToggleUI();
+      if ($('timerOverlay').classList.contains('active')) updatePanelUI();
+      if (mode === 'down' && !paused && currentSeconds() <= 0) complete();
+    }
+
+    function startTicker() {
+      stopTicker();
+      tickId = setInterval(tick, 200);
+    }
+    function stopTicker() {
+      if (tickId) { clearInterval(tickId); tickId = null; }
+    }
+
+    function readCustomSeconds() {
+      const m = Math.max(0, parseInt($('timerCustomMin').value, 10) || 0);
+      const s = Math.max(0, Math.min(59, parseInt($('timerCustomSec').value, 10) || 0));
+      return m * 60 + s;
+    }
+
+    function start() {
+      if (mode === 'down') {
+        const secs = readCustomSeconds();
+        if (secs <= 0) { $('timerCustomMin').focus(); return; }
+        totalSeconds = secs;
+      }
+      elapsedMs = 0;
+      startedAt = Date.now();
+      running = true;
+      paused = false;
+      completed = false;
+      soundOn = $('timerSound').checked;
+      hideBanner();
+      updatePanelUI();
+      updateToggleUI();
+      startTicker();
+      closeOverlay();
+      saveState();
+    }
+
+    function pause() {
+      if (!running || paused) return;
+      elapsedMs += Date.now() - startedAt;
+      paused = true;
+      updatePanelUI();
+      updateToggleUI();
+      saveState();
+    }
+
+    function resume() {
+      if (!running || !paused) return;
+      startedAt = Date.now();
+      paused = false;
+      updatePanelUI();
+      updateToggleUI();
+      saveState();
+    }
+
+    function stop() {
+      running = false;
+      paused = false;
+      elapsedMs = 0;
+      completed = false;
+      stopTicker();
+      updatePanelUI();
+      updateToggleUI();
+      hideBanner();
+      saveState();
+    }
+
+    function addMinute() {
+      if (!running || mode !== 'down') return;
+      totalSeconds += 60;
+      completed = false;
+      hideBanner();
+      updatePanelUI();
+      updateToggleUI();
+      saveState();
+    }
+
+    function complete(opts) {
+      if (completed) return;
+      const silent = !!(opts && opts.silent);
+      completed = true;
+      elapsedMs = totalSeconds * 1000; // pin to 0 remaining
+      stopTicker();
+      running = false;
+      paused = false;
+      updatePanelUI();
+      updateToggleUI();
+      showBanner();
+      if (soundOn && !silent) beep();
+      saveState();
+    }
+
+    function beep() {
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+        [880, 660, 880].forEach((freq, i) => {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.type = 'sine';
+          o.frequency.value = freq;
+          o.connect(g); g.connect(audioCtx.destination);
+          const t = now + i * 0.24;
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(0.25, t + 0.02);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+          o.start(t); o.stop(t + 0.25);
+        });
+      } catch (_) { /* no-op */ }
+    }
+
+    function showBanner() {
+      const el = $('timerBanner');
+      el.classList.add('active');
+      clearTimeout(bannerTimer);
+      bannerTimer = setTimeout(hideBanner, 15000);
+      saveState();
+    }
+    function hideBanner() {
+      $('timerBanner').classList.remove('active');
+      clearTimeout(bannerTimer);
+      saveState();
+    }
+
+    function openOverlay() {
+      $('timerOverlay').classList.add('active');
+      updatePanelUI();
+      if (!running) {
+        setTimeout(() => $('timerCustomMin')?.focus(), 0);
+      }
+    }
+    function closeOverlay() {
+      $('timerOverlay').classList.remove('active');
+    }
+    function toggleOverlay(force) {
+      const ov = $('timerOverlay');
+      const show = force !== undefined ? force : !ov.classList.contains('active');
+      if (show) openOverlay(); else closeOverlay();
+    }
+    function isOverlayActive() {
+      return $('timerOverlay').classList.contains('active');
+    }
+
+    function syncPresetSelection() {
+      const minVal = parseInt($('timerCustomMin').value, 10) || 0;
+      const secVal = parseInt($('timerCustomSec').value, 10) || 0;
+      document.querySelectorAll('.timer-preset').forEach(x => x.classList.remove('selected'));
+      if (secVal === 0) {
+        const match = document.querySelector(`.timer-preset[data-minutes="${minVal}"]`);
+        if (match) match.classList.add('selected');
+      }
+    }
+
+    function hydrate() {
+      const saved = loadState();
+      if (!saved) return;
+      hydrating = true;
+      try {
+        // Reset current timer state; we'll re-arm from the saved snapshot.
+        stopTicker();
+        running = false; paused = false; completed = false;
+        elapsedMs = 0; startedAt = 0;
+        $('timerBanner').classList.remove('active');
+
+        // Preferences
+        mode = saved.mode === 'up' ? 'up' : 'down';
+        setMode(mode);
+
+        $('timerCustomMin').value = Number.isFinite(saved.customMin) ? saved.customMin : 5;
+        $('timerCustomSec').value = Number.isFinite(saved.customSec) ? saved.customSec : 0;
+        $('timerSound').checked = saved.soundOn !== false;
+        syncPresetSelection();
+
+        if (saved.running) {
+          totalSeconds = saved.totalSeconds || 0;
+          elapsedMs = saved.elapsedMs || 0;
+          startedAt = saved.startedAt || Date.now();
+          running = true;
+          paused = !!saved.paused;
+          completed = false;
+          soundOn = saved.soundOn !== false;
+
+          // If a countdown already elapsed during the reload, finish silently.
+          if (mode === 'down' && currentSeconds() <= 0) {
+            running = true; // complete() expects running; flips to false internally
+            hydrating = false;
+            complete({ silent: true });
+            return;
+          }
+          updatePanelUI();
+          updateToggleUI();
+          startTicker();
+        } else if (saved.completed && saved.bannerActive) {
+          // Banner from a previous session that was never dismissed
+          completed = true;
+          totalSeconds = saved.totalSeconds || 0;
+          elapsedMs = saved.elapsedMs || 0;
+          showBanner();
+        }
+      } finally {
+        hydrating = false;
+      }
+    }
+
+    function init() {
+      renderPresets();
+      setMode('down');
+      updatePanelUI();
+
+      const defaultBtn = document.querySelector('.timer-preset[data-minutes="5"]');
+      if (defaultBtn) defaultBtn.classList.add('selected');
+
+      $('timerToggle').addEventListener('click', () => toggleOverlay());
+      $('timerOverlay').addEventListener('click', (e) => {
+        if (e.target === $('timerOverlay')) closeOverlay();
+      });
+      $('timerCloseBtn').addEventListener('click', closeOverlay);
+      $('timerStartBtn').addEventListener('click', start);
+      $('timerPauseBtn').addEventListener('click', pause);
+      $('timerResumeBtn').addEventListener('click', resume);
+      $('timerStopBtn').addEventListener('click', stop);
+      $('timerAddMinuteBtn').addEventListener('click', addMinute);
+
+      document.querySelectorAll('.timer-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => setMode(btn.dataset.mode));
+      });
+
+      ['timerCustomMin', 'timerCustomSec'].forEach(id => {
+        $(id).addEventListener('input', () => {
+          syncPresetSelection();
+          saveState();
+        });
+      });
+
+      $('timerSound').addEventListener('change', () => {
+        soundOn = $('timerSound').checked;
+        saveState();
+      });
+
+      $('timerBanner').addEventListener('click', (e) => {
+        if (e.target.closest('.banner-close')) return;
+        hideBanner();
+      });
+      $('timerBannerClose').addEventListener('click', (e) => {
+        e.stopPropagation();
+        hideBanner();
+      });
+
+      // Keep multiple tabs in sync
+      window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEY) hydrate();
+      });
+
+      // Restore any previous session
+      hydrate();
+    }
+
+    return { init, toggleOverlay, isOverlayActive };
+  })();
+
   // Set total
   document.getElementById('totalNum').textContent = total;
 
@@ -1594,9 +2381,27 @@ code {
 
   // Keyboard
   document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    const ovActive = document.getElementById('overview').classList.contains('active');
-    const helpActive = document.getElementById('helpOverlay').classList.contains('active');
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      // Still allow Escape to close the timer overlay from within inputs
+      if (e.key === 'Escape' && Timer.isOverlayActive()) {
+        e.preventDefault();
+        Timer.toggleOverlay(false);
+      }
+      return;
+    }
+    const ovActive    = document.getElementById('overview').classList.contains('active');
+    const helpActive  = document.getElementById('helpOverlay').classList.contains('active');
+    const timerActive = Timer.isOverlayActive();
+
+    // When the timer overlay is open, only handle Escape / T so slide nav
+    // keys (space, arrows) don't accidentally change slides while configuring.
+    if (timerActive) {
+      if (e.key === 'Escape' || e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        Timer.toggleOverlay(false);
+      }
+      return;
+    }
 
     switch (e.key) {
       case 'ArrowRight':
@@ -1613,6 +2418,9 @@ code {
       case 'o':
       case 'O':
         e.preventDefault(); toggleOverview(); break;
+      case 't':
+      case 'T':
+        e.preventDefault(); Timer.toggleOverlay(); break;
       case 'Escape':
         if (ovActive) toggleOverview(false);
         else if (helpActive) toggleHelp(false);
@@ -1642,6 +2450,7 @@ code {
   // Init
   current = readHash();
   render();
+  Timer.init();
 })();
 </script>
 
